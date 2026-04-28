@@ -27,6 +27,7 @@ lcRun app cap task = do
       counterexample = case lines out of
         (_ : o : _) -> o
         _ -> ""
+      status = if foundbug then "Failed" else "Finished"
   return Result {..}
   where
     prop = makeProp app task
