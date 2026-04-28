@@ -6,6 +6,9 @@ dependencies:
     - QuickCheck
     - smallcheck
     - leancheck
+    - hedgehog
+    - falsify
+    - tasty
     - template-haskell
     - timeit
     - silently

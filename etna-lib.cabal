@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.39.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -11,6 +11,8 @@ build-type:     Simple
 library
   exposed-modules:
       Etna.Lib
+      Etna.Lib.Strategy.Falsify
+      Etna.Lib.Strategy.Hedgehog
       Etna.Lib.Strategy.LeanCheck
       Etna.Lib.Strategy.QuickCheck
       Etna.Lib.Strategy.SmallCheck
@@ -29,10 +31,13 @@ library
     , bytestring
     , clock
     , deepseq
+    , falsify
+    , hedgehog
     , leancheck
     , regex-tdfa
     , silently
     , smallcheck
+    , tasty
     , template-haskell
     , time
     , timeit
