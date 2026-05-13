@@ -10,7 +10,20 @@ data Result = Result
   { status :: String,
     tests :: Int,
     discards :: Maybe Int,
-    counterexample :: String
+    counterexample :: String,
+    pre_counterexample :: String,
+    -- Phase timing (seconds). exec_* = time inside the property body.
+    -- time_pre_failure = wall-clock from trial start to first failure;
+    -- time_shrinking = wall-clock from first failure to trial end.
+    exec_time_pre :: Double,
+    exec_time_shrink :: Double,
+    time_pre_failure :: Double,
+    time_shrinking :: Double,
+    -- Property evaluations during the shrinking phase, classified by
+    -- outcome. 0 for strategies without a shrinking phase.
+    shrinking_passed :: Int,
+    shrinking_failed :: Int,
+    shrinking_discarded :: Int
   }
   deriving (Show)
 

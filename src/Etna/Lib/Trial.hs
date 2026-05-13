@@ -5,6 +5,7 @@
 module Etna.Lib.Trial (run, sample) where
 
 import Etna.Lib.Types (Result (Result))
+import Etna.Lib.Util (shrinkModeFromEnv, shrinkModeName, shrinkModeNumber)
 import qualified Etna.Lib.Types as B
 import Control.Monad (forM)
 import Data.Aeson (ToJSON, encode)
@@ -33,15 +34,28 @@ import Data.List
 
 
 
+-- workload/strategy/property are intentionally NOT fields here. Etna seeds
+-- the metric with those (from the test JSON's task fields) before merging
+-- this output, and the merge lets runtime JSON override context. Echoing
+-- them back from Haskell would shadow etna's bare task names with the
+-- internally-prefixed `prop_X` form, which breaks `metric_matches` dedup
+-- (etna2/src/driver.rs).
 data FullResult = FullResult
-  { workload :: String,
-    strategy :: String,
-    property :: String,
-    status :: String,
+  { status :: String,
     tests :: Maybe Int,
     discards :: Maybe Int,
     time :: String,
-    counterexample :: String
+    counterexample :: String,
+    pre_counterexample :: String,
+    shrinks :: Int,
+    shrink_mode :: String,
+    exec_time_pre :: Double,
+    exec_time_shrink :: Double,
+    time_pre_failure :: Double,
+    time_shrinking :: Double,
+    shrinking_passed :: Maybe Int,
+    shrinking_failed :: Maybe Int,
+    shrinking_discarded :: Maybe Int
   }
   deriving (Generic)
 
@@ -52,14 +66,23 @@ type Timeout = Maybe Double
 type Info = (String, String, String)
 
 runOne :: Info -> Timeout -> IO Result -> IO FullResult
-runOne (workload, strategy, property) mtimeout test = do
+runOne (_workload, _strategy, _property) mtimeout test = do
   case mtimeout of
     Nothing -> run
     Just t -> fromMaybe (defaultResult (printf "%.6fs" t)) <$> timeout (fromSec t) run
   where
     run = do
       (time, Result {..}) <- myTimeIt $ eval $ silence test
-      return FullResult {tests = Just tests, time = printf "%.6fs" time, ..}
+      return FullResult
+        { tests = Just tests
+        , time = printf "%.6fs" time
+        , shrinks = shrinkModeNumber shrinkModeFromEnv
+        , shrink_mode = shrinkModeName shrinkModeFromEnv
+        , shrinking_passed = Just shrinking_passed
+        , shrinking_failed = Just shrinking_failed
+        , shrinking_discarded = Just shrinking_discarded
+        , ..
+        }
 
     fromSec :: Double -> Int
     fromSec = round . (1000000 *)
@@ -71,6 +94,16 @@ runOne (workload, strategy, property) mtimeout test = do
           tests = Nothing,
           discards = Nothing,
           counterexample = "",
+          pre_counterexample = "",
+          shrinks = shrinkModeNumber shrinkModeFromEnv,
+          shrink_mode = shrinkModeName shrinkModeFromEnv,
+          exec_time_pre = 0,
+          exec_time_shrink = 0,
+          time_pre_failure = 0,
+          time_shrinking = 0,
+          shrinking_passed = Nothing,
+          shrinking_failed = Nothing,
+          shrinking_discarded = Nothing,
           ..
         }
 
